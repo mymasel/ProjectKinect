@@ -4,10 +4,11 @@ import cv2
 from freenect import sync_get_depth as get_depth, sync_get_video as get_video
 import numpy as np
 import os
-importlib.import_module("OpenCV-Face-Recognition-Python")
+#importlib.import_module("OpenCV-Face-Recognition-Python")
 def create_dir(us_num):
     os.makedirs('photos/'+str(us_num),exist_ok =True)
-def detect_face_from_video(rgb,num_photo,us_num):
+
+def detect_face_from_video(rgb,us_num):
     gray = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
 
     face_cascade = cv2.CascadeClassifier('opencv-files/lbpcascade_frontalface.xml')
@@ -15,12 +16,13 @@ def detect_face_from_video(rgb,num_photo,us_num):
     if (len(faces) == 0):
         return -1;
     else:
-        create_dir(us_num)
-        for i in range(0,12):
-            for h in range(0,10000):
-                cv2.imwrite('photos/' + 's'+ str(us_num)+ '/' + str(i)+'.jpg', rgb);
+        cv2.imwrite('photo_for_detect/' + str(1)+'.jpg', gray);
     return 0;
 
+def AddUser(subjects):
+    name = ""
+    input(name)
+    subjects.append(name)
 def detect_face(img):
     # convert the test image to gray image as opencv face detector expects gray images
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -113,12 +115,17 @@ def prepare_training_data(data_folder_path):
 
     return faces, labels
 
-def AddUser(subjects):
-    name = ""
-    input(name)
-    subjects.append(name)
 
 
+print("Preparing data...")
+faces, labels = prepare_training_data("photos")
+print("Data prepared")
+subjects = [""]
+# print total faces and labels
+print("Total faces: ", len(faces))
+print("Total labels: ", len(labels))
+face_recognizer = cv2.face.LBPHFaceRecognizer_create()
+face_recognizer.train(faces, np.array(labels))
 def predict(test_img):
     # make a copy of the image as we don't want to chang original image
     img = test_img.copy()
@@ -133,19 +140,10 @@ def predict(test_img):
     return img
     
 def objectTracker1():
-    print("Preparing data...")
-    faces, labels = prepare_training_data("photos")
-    print("Data prepared")
-
-    # print total faces and labels
-    print("Total faces: ", len(faces))
-    print("Total labels: ", len(labels))
-    face_recognizer = cv2.face.LBPHFaceRecognizer_create()
-    face_recognizer.train(faces, np.array(labels))
-
     num_photo = 1
     us_num = 1
     (depth, _), (rgb, _) = get_depth(), get_video()
+
     subjects = [""]
     print("Add? 1/0")
     quest = 0
@@ -183,6 +181,9 @@ def objectTracker1():
         for (x, y, w, h) in objects:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
         cv2.imshow("preview", rgb)
+        if (detect_face_from_video(rgb,us_num) == 0 ):
+           if (predict('photo_for_detect/' + str(1)+'.jpg') == ):
+
         key = cv2.waitKey(20)
         if key == 27:  # exit on ESC
             break
