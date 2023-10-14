@@ -1,5 +1,5 @@
 import os.path
-import importlib
+#import importlib
 import cv2
 from freenect import sync_get_depth as get_depth, sync_get_video as get_video
 import numpy as np
@@ -16,13 +16,17 @@ def detect_face_from_video(rgb,us_num):
     if (len(faces) == 0):
         return -1;
     else:
-        cv2.imwrite('photo_for_detect/' + str(1)+'.jpg', gray);
+        cv2.imwrite('photo_for_detect/' + str(1)+'.jpg', rgb);
     return 0;
 
-def AddUser(subjects):
+def AddUser( rgb, us_num,i):
     name = ""
     input(name)
     subjects.append(name)
+
+    if (detect_face_from_video(rgb, us_num) == 0):
+        cv2.imwrite('photos/'+ 's'+ str(us_num)+ '/' + str(i) + '.jpg', rgb);
+    return 0;
 def detect_face(img):
     # convert the test image to gray image as opencv face detector expects gray images
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -70,7 +74,7 @@ def prepare_training_data(data_folder_path):
         # , so removing letter 's' from dir_name will give us label
         label = int(dir_name.replace("s", ""))
 
-        # build path of directory containin images for current subject 
+        # build path of directory containin images for current subject
         # sample subject_dir_path = "training-data/s1"
         subject_dir_path = data_folder_path + "/" + dir_name
 
@@ -121,6 +125,11 @@ print("Preparing data...")
 faces, labels = prepare_training_data("photos")
 print("Data prepared")
 subjects = [""]
+f = open('subjects', 'r+' )
+for line in  f:
+    subjects += [line.split(",")]
+
+
 # print total faces and labels
 print("Total faces: ", len(faces))
 print("Total labels: ", len(labels))
@@ -132,8 +141,10 @@ def predict(test_img):
     # detect face from the image
     face, rect = detect_face(img)
 
-    # predict the image using our face recognizer 
+    # predict the image using our face recognizer
     label, confidence = face_recognizer.predict(face)
+    if (label == 0):
+        return None
     # get name of respective label returned by face recognizer
     label_text = subjects[label]
 
@@ -142,32 +153,20 @@ def predict(test_img):
 def objectTracker1():
     num_photo = 1
     us_num = 1
-    (depth, _), (rgb, _) = get_depth(), get_video()
-
-    subjects = [""]
-    print("Add? 1/0")
-    quest = 0
-    if (input(quest) == 1):
-        AddUser(subjects)
-        detect_face_from_video(rgb, num_photo, us_num)
-
     faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
     cv2.namedWindow("preview")
     vc = cv2.VideoCapture(0)
-
+    i = 1
     while True:
         # Get a fresh frame
-
+        (depth, _), (rgb, _) = get_depth(), get_video()
         # Build a two panel color image
         d3 = np.dstack((depth, depth, depth)).astype(np.uint8)
         da = np.hstack((d3, rgb))
 
         # Simple Downsample
-        cv2.imshow('both', np.array(da[::2, ::2, ::-1]))
-        cv2.imshow("3d",depth)
         cv2.waitKey(5)
 
-        rval, frame = vc.read()
         # Capture frame-by-frame
         ret, frame = vc.read()
         frame = rgb
@@ -177,18 +176,28 @@ def objectTracker1():
                                                minNeighbors=1, minSize=(40, 40),
                                               flags=cv2.CASCADE_SCALE_IMAGE)
 
+        quest=0
         # Draw a rectangle around the faces
-        for (x, y, w, h) in objects:
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
         cv2.imshow("preview", rgb)
-        if (detect_face_from_video(rgb,us_num) == 0 ):
-           if (predict('photo_for_detect/' + str(1)+'.jpg') == ):
+        if (detect_face_from_video(rgb, us_num)) == 0 and i != 13:
+           test_img = cv2.imread('photo_for_detect/' + str(1) + '.jpg')
+           if (predict(test_img) == None):
+               print("No user")
+               print("Add user?")
+               if (input(quest)==1):
+                    AddUser(subjects,rgb)
+               else:
+                   print("EST V BASE")
+                   continue
 
         key = cv2.waitKey(20)
-        if key == 27:  # exit on ESC
+        if key == 27:
+            f = open('subjects', 'w')
+            f.write(subjects)
+            f.close()   # exit on ESC
             break
 
-    #vc.release()
+    vc.release()
     cv2.destroyWindow("preview")
 
 if __name__ == '__main__':
