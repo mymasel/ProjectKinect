@@ -26,6 +26,7 @@ def AddUser( rgb, us_num,i):
 
     if (detect_face_from_video(rgb, us_num) == 0):
         cv2.imwrite('photos/'+ 's'+ str(us_num)+ '/' + str(i) + '.jpg', rgb);
+        update_frame()
     return 0;
 def detect_face(img):
     # convert the test image to gray image as opencv face detector expects gray images
@@ -124,10 +125,10 @@ def prepare_training_data(data_folder_path):
 print("Preparing data...")
 faces, labels = prepare_training_data("photos")
 print("Data prepared")
-subjects = [""]
-f = open('subjects', 'r+' )
-for line in  f:
-    subjects += [line.split(",")]
+subjects = [" "]
+f = open('subjects.txt', 'r+' )
+for item in  f:
+    subjects += item.split(",")
 
 
 # print total faces and labels
@@ -148,14 +149,35 @@ def predict(test_img):
     # get name of respective label returned by face recognizer
     label_text = subjects[label]
 
-    return img
-    
+    return label
+
+faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+cv2.namedWindow("preview")
+vc = cv2.VideoCapture(0)
+def update_frame():
+    (depth, _), (rgb, _) = get_depth(), get_video()
+    # Build a two panel color image
+    d3 = np.dstack((depth, depth, depth)).astype(np.uint8)
+    da = np.hstack((d3, rgb))
+
+    # Simple Downsample
+    cv2.waitKey(5)
+
+    # Capture frame-by-frame
+    ret, frame = vc.read()
+    frame = rgb
+    # Convert frame to grayscale
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    objects = faceCascade.detectMultiScale(gray, scaleFactor=1.2,
+                                           minNeighbors=1, minSize=(40, 40),
+                                           flags=cv2.CASCADE_SCALE_IMAGE)
+    cv2.waitKey(40)
+
+
 def objectTracker1():
     num_photo = 1
     us_num = 1
-    faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-    cv2.namedWindow("preview")
-    vc = cv2.VideoCapture(0)
+
     i = 1
     while True:
         # Get a fresh frame
@@ -180,15 +202,19 @@ def objectTracker1():
         # Draw a rectangle around the faces
         cv2.imshow("preview", rgb)
         if (detect_face_from_video(rgb, us_num)) == 0 and i != 13:
-           test_img = cv2.imread('photo_for_detect/' + str(1) + '.jpg')
-           if (predict(test_img) == None):
-               print("No user")
-               print("Add user?")
-               if (input(quest)==1):
-                    AddUser(subjects,rgb)
+           tvtv = 'photo_for_detect/' + str(1) + '.jpg'
+           test_img = cv2.imread(tvtv)
+           label = predict(test_img)
+           if (label != None):
+               print("EST V BASE", subjects[label])
+               break
+           else:
+               print("User undefined \n Add user?")
+               if (input(quest) == 1):
+                   for h in range(1, 13):
+                       AddUser(subjects, rgb)
                else:
-                   print("EST V BASE")
-                   continue
+                   break
 
         key = cv2.waitKey(20)
         if key == 27:
