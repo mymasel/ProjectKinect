@@ -75,16 +75,10 @@ def objectTracker1():
         if (detect_face_from_video(rgb, us_num)) == 0 and i!=13:
             key = cv2.waitKey(50)
             tvtv = 'photo_for_detect/' + str(1) + '.jpg'
-            test_img = cv2.imread(tvtv)
-            if (predict(test_img).any() == None):
-               print("User undefined \n Add user?")
-               if (input(quest) == 1):
-                     AddUser(frame, us_num, i)
-               else:
-                   break
-            else:
-                print("EST V BASE")
-                break
+            print("User undefined \n Add user?")
+
+            AddUser(frame, us_num, i)
+            i +=1
 
 
         key = cv2.waitKey(1)
