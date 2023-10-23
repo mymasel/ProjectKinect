@@ -11,6 +11,8 @@ import os
 
 
 class Ui_MainWindow(object):
+
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(670, 417)
@@ -22,9 +24,9 @@ class Ui_MainWindow(object):
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(20, 20, 67, 17))
         self.label.setObjectName("label")
-        self.graphicsView_2 = QtWidgets.QGraphicsView(self.centralwidget)
-        self.graphicsView_2.setGeometry(QtCore.QRect(280, 40, 151, 181))
-        self.graphicsView_2.setObjectName("graphicsView_2")
+        self.graphicsView2 = QtWidgets.QGraphicsView(self.centralwidget)
+        self.graphicsView2.setGeometry(QtCore.QRect(280, 40, 151, 181))
+        self.graphicsView2.setObjectName("graphicsView_2")
         self.label_2 = QtWidgets.QLabel(self.centralwidget)
         self.label_2.setGeometry(QtCore.QRect(280, 20, 67, 17))
         self.label_2.setObjectName("label_2")
@@ -54,7 +56,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-        self.pushButton.clicked.connect(self.Add_button(rgb))
+        self.Push_but()
 
 
     def retranslateUi(self, MainWindow):
@@ -66,15 +68,24 @@ class Ui_MainWindow(object):
         self.label_4.setText(_translate("MainWindow", "User name "))
         self.pushButton.setText(_translate("MainWindow", "Add"))
 
+    def Push_but(self):
+        if self.lineEdit.text() == "":
+            return
+        self.pushButton.clicked.connect(lambda: ui.Add_button(self,rgb))
+
+
+    #'photos/s' + str(us_num) + '/ 3.jpg'
     def show_face_from_DB(self,us_num):
-        self.scene2 = QtWidgets.QGraphicsScene()
-        self.graphicsView_2.setScene(self.scene2)
-        self.image_qt2 = QImage('photos/'+ 's'+ str(us_num)+ '/' +  ' 3.jpg')
+        self.scene2= QtWidgets.QGraphicsScene()
+        self.graphicsView2.setScene(self.scene2)
+        self.image_qt2 = QImage('photos/s' + str(us_num)+ '/3.jpg')
 
         pic2 = QtWidgets.QGraphicsPixmapItem()
-        pic2.setPixmap(QPixmap.fromImage(self.image_qt.scaled(151, 181, Qt.IgnoreAspectRatio, Qt.FastTransformation)))
-        self.scene.setSceneRect(0, 0, 400, 400)
-        self.scene.addItem(pic2)
+        pic2.setPixmap(QPixmap.fromImage(self.image_qt2.scaled(141, 171, Qt.IgnoreAspectRatio, Qt.FastTransformation)))
+        self.scene2.setSceneRect(0, 0, 400, 400)
+        self.scene2.addItem(pic2)
+
+
     def show_face_for_detect(self):
 
         #image =QImage(str(1)+'.jpg')
@@ -82,47 +93,47 @@ class Ui_MainWindow(object):
         #self.graphicsView.
         self.scene = QtWidgets.QGraphicsScene()
         self.graphicsView.setScene(self.scene)
-        self.image_qt = QImage('photo_for_detect/' + str(1) + '.jpg')
+        self.image_qt = QImage('photo_for_detect/1.jpg')
 
         pic = QtWidgets.QGraphicsPixmapItem()
-        pic.setPixmap(QPixmap.fromImage(self.image_qt.scaled(211, 311 ,Qt.IgnoreAspectRatio,Qt.FastTransformation)))
+        pic.setPixmap(QPixmap.fromImage(self.image_qt.scaled(201, 301 ,Qt.IgnoreAspectRatio,Qt.FastTransformation)))
         self.scene.setSceneRect(0, 0, 400, 400)
         self.scene.addItem(pic)
     def print_name_us(self,Name_us):
         self.textBrowser.setText(Name_us)
     def Add_button(self,rgb):
         text = self.lineEdit.text()
-        QMessageBox.about(self, "User Add", "Please level up")
+        print(1)
         for h in range(1, 13):
-            AddUser(rgb,subjects.count()+1, h,text)
-        QMessageBox.about(self, "User Add", "End")
+            AddUser(rgb, len(subjects)+1, h,text)
+
         f = open('subjects', 'w')
-        f.write(subjects)
+        for i in range(len(subjects)):
+            f.write(subjects[i])
         f.close()
 
     def MessageBox(self):
-        QMessageBox.about(self, "User undefined", "If you want add user , push button <<Add>> ")
+        QMessageBox.about("User undefined", "If you want add user , push button <<Add>>")
 
 
 def create_dir(us_num):
     os.makedirs('photos/'+str(us_num),exist_ok =True)
 
-def detect_face_from_video(rgb,us_num):
+def detect_face_from_video(rgb):
     gray = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
-
     face_cascade = cv2.CascadeClassifier('opencv-files/lbpcascade_frontalface.xml')
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5);
     if (len(faces) == 0):
         return -1;
     else:
-        cv2.imwrite('photo_for_detect/' + str(1)+'.jpg', rgb);
+        cv2.imwrite('photo_for_detect/1.jpg', rgb);
     return 0;
 
 def AddUser( rgb, us_num,i,text):
     create_dir(us_num)
     subjects.append(text)
 
-    if (detect_face_from_video(rgb, us_num) == 0):
+    if (detect_face_from_video(rgb) == 0):
         cv2.imwrite('photos/'+ 's'+ str(us_num)+ '/' + str(i) + '.jpg', rgb);
         update_frame()
     return 0;
@@ -228,8 +239,6 @@ print("Total labels: ", len(labels))
 face_recognizer = cv2.face.LBPHFaceRecognizer_create()
 face_recognizer.train(faces, np.array(labels))
 faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-cv2.namedWindow("preview")
-vc = cv2.VideoCapture(0)
 # Get a fresh frame
 (depth, _), (rgb, _) = get_depth(), get_video()
 # Build a two panel color image
@@ -237,20 +246,14 @@ d3 = np.dstack((depth, depth, depth)).astype(np.uint8)
 da = np.hstack((d3, rgb))
 
 # Simple Downsample
-cv2.waitKey(5)
-
-# Capture frame-by-frame
-ret, frame = vc.read()
-frame = rgb
-# Convert frame to grayscale
-gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
 def predict(test_img):
     # make a copy of the image as we don't want to chang original image
     img = test_img.copy()
     # detect face from the image
     face, rect = detect_face(img)
-
+    if rect.all() == None:
+        return None
     # predict the image using our face recognizer
     label, confidence = face_recognizer.predict(face)
     if (label == 0):
@@ -270,7 +273,6 @@ def update_frame():
     cv2.waitKey(5)
 
     # Capture frame-by-frame
-    ret, frame = vc.read()
     frame = rgb
     # Convert frame to grayscale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -291,13 +293,17 @@ def objectTracker1():
         cv2.waitKey(5)
 
         # Capture frame-by-frame
-        ret, frame = vc.read()
-        # Convert frame to grayscale
 
+        frame = rgb
+        # Convert frame to grayscale
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        objects = faceCascade.detectMultiScale(gray, scaleFactor=1.2,
+                                               minNeighbors=1, minSize=(40, 40),
+                                               flags=cv2.CASCADE_SCALE_IMAGE)
 
         # Draw a rectangle around the faces
 
-        if (detect_face_from_video(rgb, us_num)) == 0 :
+        if (detect_face_from_video(rgb)) == 0 :
            tvtv = 'photo_for_detect/' + str(1) + '.jpg'
            test_img = cv2.imread(tvtv)
            label = predict(test_img)
@@ -313,7 +319,7 @@ def objectTracker1():
             f.close()   # exit on ESC
             break
 
-    vc.release()
+
 
 
 
@@ -325,12 +331,12 @@ if __name__ == "__main__":
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
-    while True:
-        Name_us, num_lable = objectTracker1()
-        if Name_us == None :
+
+    Name_us, num_lable = objectTracker1()
+    if Name_us == None :
             ui.show_face_for_detect()
             ui.MessageBox()
-        else:
+    else:
             ui.show_face_for_detect()
             ui.show_face_from_DB(num_lable)
             ui.print_name_us(Name_us)
