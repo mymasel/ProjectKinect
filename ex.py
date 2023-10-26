@@ -11,7 +11,9 @@ import os
 
 
 class Ui_MainWindow(object):
-
+    def Push_but(self):
+        if self.lineEdit.text() == "":
+            return
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -53,10 +55,13 @@ class Ui_MainWindow(object):
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
-
+        self.RefButton = QtWidgets.QPushButton(self.centralwidget)
+        self.RefButton.setGeometry(QtCore.QRect(500, 150, 89, 25))
+        self.RefButton.setObjectName("pushButton")
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-        self.Push_but()
+        self.pushButton.clicked.connect(lambda: self.Push_but())
+        self.RefButton.clicked.connect(lambda: self.Scan_but())
 
 
     def retranslateUi(self, MainWindow):
@@ -67,14 +72,46 @@ class Ui_MainWindow(object):
         self.label_3.setText(_translate("MainWindow", "User name "))
         self.label_4.setText(_translate("MainWindow", "User name "))
         self.pushButton.setText(_translate("MainWindow", "Add"))
+        self.RefButton.setText(_translate("MainWindow", "Scan"))
 
+
+    def Scan_but(self):
+        train_again()
+        msg2 = QMessageBox()
+        msg2.setIcon(QMessageBox.Information)
+        Name_us, num_lable = objectTracker1()
+        if Name_us == None:
+            ui.show_face_for_detect()
+            msg2.setText("User undefined")
+            msg2.setWindowTitle("ALARM")
+            msg2.exec()
+        else:
+            msg2.setText("User found")
+            msg2.setWindowTitle("Alarm")
+            msg2.exec()
+            ui.show_face_for_detect()
+            ui.show_face_from_DB(num_lable)
+            ui.print_name_us(Name_us)
     def Push_but(self):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
         if self.lineEdit.text() == "":
+            msg.setText("Write your name on the input window\n and try again")
+            msg.setWindowTitle("Alarm")
+            msg.exec()
             return
-        self.pushButton.clicked.connect(lambda: ui.Add_button(self,rgb))
+        msg.setText("Position yourself of the front camera")
+        msg.setWindowTitle("Add user")
+        msg.exec()
+        self.Add_button(rgb,us_num)
+        msg.setText("Successful")
+        msg.setWindowTitle("User add")
+        msg.exec()
 
 
-    #'photos/s' + str(us_num) + '/ 3.jpg'
+
+
+
     def show_face_from_DB(self,us_num):
         self.scene2= QtWidgets.QGraphicsScene()
         self.graphicsView2.setScene(self.scene2)
@@ -87,10 +124,6 @@ class Ui_MainWindow(object):
 
 
     def show_face_for_detect(self):
-
-        #image =QImage(str(1)+'.jpg')
-        #pixmap = QPixmap()
-        #self.graphicsView.
         self.scene = QtWidgets.QGraphicsScene()
         self.graphicsView.setScene(self.scene)
         self.image_qt = QImage('photo_for_detect/1.jpg')
@@ -101,23 +134,20 @@ class Ui_MainWindow(object):
         self.scene.addItem(pic)
     def print_name_us(self,Name_us):
         self.textBrowser.setText(Name_us)
-    def Add_button(self,rgb):
-        text = self.lineEdit.text()
-        print(1)
+    def Add_button(self,rgb,us_num):
+        text = "," + self.lineEdit.text()
+        create_dir(us_num)
+        subjects.append(text)
         for h in range(1, 13):
-            AddUser(rgb, len(subjects)+1, h,text)
-
-        f = open('subjects', 'w')
+            AddUser(rgb, us_num, h)
+        f = open('subjects.txt', 'w')
         for i in range(len(subjects)):
             f.write(subjects[i])
         f.close()
 
-    def MessageBox(self):
-        QMessageBox.about("User undefined", "If you want add user , push button <<Add>>")
-
 
 def create_dir(us_num):
-    os.makedirs('photos/'+str(us_num),exist_ok =True)
+    os.makedirs('photos/s'+str(us_num),exist_ok =True)
 
 def detect_face_from_video(rgb):
     gray = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
@@ -129,14 +159,11 @@ def detect_face_from_video(rgb):
         cv2.imwrite('photo_for_detect/1.jpg', rgb);
     return 0;
 
-def AddUser( rgb, us_num,i,text):
-    create_dir(us_num)
-    subjects.append(text)
+def AddUser( rgb, us_num,i):
+    cv2.imwrite('photos/s'+ str(us_num)+ '/' + str(i) + '.jpg', rgb);
+    update_frame()
+    cv2.waitKey(2000)
 
-    if (detect_face_from_video(rgb) == 0):
-        cv2.imwrite('photos/'+ 's'+ str(us_num)+ '/' + str(i) + '.jpg', rgb);
-        update_frame()
-    return 0;
 def detect_face(img):
     # convert the test image to gray image as opencv face detector expects gray images
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -223,19 +250,22 @@ def prepare_training_data(data_folder_path):
 
     return faces, labels
 
+def train_again():
+    faces, labels = prepare_training_data("photos")
+    subjects = [" "]
+    f = open('subjects.txt', 'r+')
+    for item in f:
+        subjects += item.split(",")
+
+    face_recognizer = cv2.face.LBPHFaceRecognizer_create()
+    face_recognizer.train(faces, np.array(labels))
 
 
-print("Preparing data...")
 faces, labels = prepare_training_data("photos")
-print("Data prepared")
 subjects = [" "]
 f = open('subjects.txt', 'r+' )
 for item in  f:
     subjects += item.split(",")
-
-# print total faces and labels
-print("Total faces: ", len(faces))
-print("Total labels: ", len(labels))
 face_recognizer = cv2.face.LBPHFaceRecognizer_create()
 face_recognizer.train(faces, np.array(labels))
 faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
@@ -244,7 +274,7 @@ faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 # Build a two panel color image
 d3 = np.dstack((depth, depth, depth)).astype(np.uint8)
 da = np.hstack((d3, rgb))
-
+us_num = len(subjects)
 # Simple Downsample
 
 def predict(test_img):
@@ -252,7 +282,8 @@ def predict(test_img):
     img = test_img.copy()
     # detect face from the image
     face, rect = detect_face(img)
-    if rect.all() == None:
+    (x,y,w,h) = rect
+    if w + h == 0:
         return None
     # predict the image using our face recognizer
     label, confidence = face_recognizer.predict(face)
@@ -281,7 +312,7 @@ def update_frame():
 
 def objectTracker1():
     num_photo = 1
-    us_num = 5
+
     while True:
         # Get a fresh frame
         (depth, _), (rgb, _) = get_depth(), get_video()
@@ -332,13 +363,6 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow)
     MainWindow.show()
 
-    Name_us, num_lable = objectTracker1()
-    if Name_us == None :
-            ui.show_face_for_detect()
-            ui.MessageBox()
-    else:
-            ui.show_face_for_detect()
-            ui.show_face_from_DB(num_lable)
-            ui.print_name_us(Name_us)
+
 
     sys.exit(app.exec_())

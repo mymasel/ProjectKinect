@@ -1,14 +1,14 @@
 import os.path
-#import importlib
+
 import cv2
 from freenect import sync_get_depth as get_depth, sync_get_video as get_video
 import numpy as np
 import os
-#importlib.import_module("OpenCV-Face-Recognition-Python")
+
 def create_dir(us_num):
     os.makedirs('photos/'+str(us_num),exist_ok =True)
 
-def detect_face_from_video(rgb,us_num):
+def detect_face_from_video(rgb,depth):
     gray = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
 
     face_cascade = cv2.CascadeClassifier('opencv-files/lbpcascade_frontalface.xml')
@@ -17,6 +17,7 @@ def detect_face_from_video(rgb,us_num):
         return -1;
     else:
         cv2.imwrite('photo_for_detect/' + str(1)+'.jpg', rgb);
+        cv2.imwrite('photo_for_detect/' + str(2)+'.jpg', depth)
     return 0;
 
 def AddUser( rgb, us_num,i):
@@ -201,26 +202,13 @@ def objectTracker1():
         quest=0
         # Draw a rectangle around the faces
         cv2.imshow("preview", rgb)
-        if (detect_face_from_video(rgb, us_num)) == 0 and i != 13:
-           tvtv = 'photo_for_detect/' + str(1) + '.jpg'
-           test_img = cv2.imread(tvtv)
-           label = predict(test_img)
-           if (label != None):
-               print("EST V BASE", subjects[label])
-               break
-           else:
-               print("User undefined \n Add user?")
-               if (input(quest) == 1):
-                   for h in range(1, 13):
-                       AddUser(subjects, rgb)
-               else:
-                   break
+        cv2.imshow("Depth", depth)
+        if (detect_face_from_video(rgb, depth)) == 0 and i != 13:
+           tvtv = 'photo_for_detect/1.jpg'
 
         key = cv2.waitKey(20)
         if key == 27:
-            f = open('subjects', 'w')
-            f.write(subjects)
-            f.close()   # exit on ESC
+
             break
 
     vc.release()
